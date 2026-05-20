@@ -62,7 +62,7 @@ const SelectMethod = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full text-center space-y-12 max-w-5xl flex flex-col items-center"
+            className="relative z-10 w-full text-center space-y-12 max-w-5xl flex flex-col items-center"
           >
             <div className="space-y-5">
               <h1 className="text-4xl md:text-5xl font-bold text-wood font-serif tracking-tight">Select Method</h1>
@@ -110,7 +110,7 @@ const SelectMethod = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full text-center space-y-12 max-w-5xl flex flex-col items-center"
+            className="relative z-10 w-full text-center space-y-12 max-w-5xl flex flex-col items-center"
           >
             <div className="space-y-5">
               <h1 className="text-4xl md:text-5xl font-bold text-wood font-serif tracking-tight">Select Number of Photos</h1>
