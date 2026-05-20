@@ -9,9 +9,19 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
-      {/* Background vignette effect */}
-      <div className="absolute inset-0 bg-gradient-to-b from-silk via-silk/95 to-silk/90 pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(48,21,14,0.03)_100%)] pointer-events-none" />
+      {/* Background Image with slow animation */}
+      <motion.div 
+        initial={{ scale: 1.15, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 2, ease: "easeOut" }}
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/bgphotocoff1.jpg')" }}
+      />
+      {/* Soft elegant overlay with backdrop blur for readability */}
+      <div className="absolute inset-0 bg-silk/85 backdrop-blur-[6px] pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-silk/40 via-transparent to-silk/95 pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,rgba(48,21,14,0.15)_100%)] pointer-events-none" />
+
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
