@@ -10,9 +10,9 @@ const Landing = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
       {/* Background Image - fully visible */}
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/bgphotocoff1.jpg')" }}
+        style={{ backgroundImage: "url('/bg_landingpage.png')" }}
       />
 
 
@@ -23,10 +23,10 @@ const Landing = () => {
         transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
         className="relative z-10 flex flex-col items-center space-y-4 max-w-xl mx-auto"
       >
-        <h1 className="text-4xl md:text-[52px] font-bold text-silk tracking-tight leading-none uppercase font-serif">
+        <h1 className="text-4xl md:text-[52px] font-bold text-wood tracking-tight leading-none uppercase font-serif">
           PhotoCoff
         </h1>
-        <p className="text-[9px] md:text-[10px] uppercase tracking-[0.4em] text-silk/80 font-sans font-semibold">
+        <p className="text-[9px] md:text-[10px] uppercase tracking-[0.4em] text-wood/80 font-sans font-semibold">
           Make a Beutiful Moments with us!
         </p>
 
