@@ -61,7 +61,7 @@ const Studio = () => {
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
+
     const photoData = canvas.toDataURL('image/jpeg');
     setPhotos(prev => {
       if (prev.length >= photoCount) return prev;
@@ -97,7 +97,9 @@ const Studio = () => {
   };
 
   return (
+
     <div className="h-screen overflow-hidden w-screen bg-[#FDFBF9] flex flex-col items-center py-4 md:py-8 font-sans">
+
       {/* Flash Effect */}
       <AnimatePresence>
         {flash && (
@@ -188,10 +190,10 @@ const Studio = () => {
                     {/* Delete Overlay */}
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <button
-                         onClick={() => deletePhoto(i)}
-                         className="p-3 bg-white/20 hover:bg-[#91545B] rounded-full backdrop-blur-md text-white transition-all transform hover:scale-110 active:scale-95 cursor-pointer"
+                        onClick={() => deletePhoto(i)}
+                        className="p-3 bg-white/20 hover:bg-[#91545B] rounded-full backdrop-blur-md text-white transition-all transform hover:scale-110 active:scale-95 cursor-pointer"
                       >
-                         <Trash2 className="w-5 h-5" strokeWidth={1.5} />
+                        <Trash2 className="w-5 h-5" strokeWidth={1.5} />
                       </button>
                     </div>
                   </>

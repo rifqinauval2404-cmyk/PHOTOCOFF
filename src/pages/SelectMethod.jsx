@@ -98,7 +98,7 @@ const SelectMethod = () => {
       {/* Background Image - fully visible */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none"
-        style={{ backgroundImage: "url('/bgphotocoff2.jpg')" }}
+        style={{ backgroundImage: "url('/bg_landingpage.png')" }}
       />
 
       <AnimatePresence mode="wait">
