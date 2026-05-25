@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, Share2, RotateCcw, X, Link, ArrowRight } from 'lucide-react';
+import { Download, Share2, RotateCcw, X, Link, ArrowRight, QrCode } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { useNavigate } from 'react-router-dom';
 import { usePhotography } from '../context/PhotographyContext';
@@ -37,7 +37,7 @@ const FRAME_CONFIGS = {
       { top: '58.1%', left: '11.2%', width: '37.0%', height: '18.5%' },
     ]
   },
-  romantic: { // frame_2.png (Denim background in public folder)
+  romantic: { // frame_2.png
     6: [
       { top: '10.6%', left: '7.2%', width: '35.8%', height: '24.3%' },
       { top: '10.6%', left: '55.4%', width: '35.8%', height: '24.3%' },
@@ -52,7 +52,7 @@ const FRAME_CONFIGS = {
       { top: '68.8%', left: '7.2%', width: '35.8%', height: '24.3%' },
     ]
   },
-  vintage: { // frame_3.png (Newspaper background in public folder)
+  vintage: { // frame_3.png
     6: [
       { top: '33.8%', left: '2.8%', width: '94.4%', height: '27.8%' },
       { top: '77.8%', left: '2.8%', width: '30.8%', height: '18.8%' },
@@ -64,7 +64,7 @@ const FRAME_CONFIGS = {
       { top: '64.8%', left: '38.0%', width: '24.0%', height: '12.0%' },
     ]
   },
-  denim: { // frame_4.png (Cupid background in public folder)
+  denim: { // frame_4.png
     6: [
       { top: '11.5%', left: '11.2%', width: '37.0%', height: '18.5%' },
       { top: '11.5%', left: '51.8%', width: '37.0%', height: '18.5%' },
@@ -179,75 +179,123 @@ const Result = () => {
   const activeConfigs = FRAME_CONFIGS[activeFrame] || FRAME_CONFIGS.rustic;
   const currentConfigs = activeConfigs[photoCount] || activeConfigs[6];
 
+  // Recap URL for the QR code
+  const recapUrl = `${window.location.origin}/recap`;
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&color=30150e&bgcolor=faf0e6&data=${encodeURIComponent(recapUrl)}`;
+
   return (
-    <div className="h-screen overflow-hidden bg-[#FDFBF9] py-4 md:py-8 px-4 flex flex-col items-center justify-center gap-4 md:gap-8 font-sans relative">
+    <div className="min-h-screen bg-[#FDFBF9] py-6 sm:py-8 px-4 flex flex-col items-center justify-center gap-6 sm:gap-8 font-sans relative overflow-y-auto">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-2"
+        className="text-center space-y-1.5 sm:space-y-2 flex-shrink-0"
       >
-        <h1 className="text-5xl md:text-6xl font-serif font-bold text-wood">There u go!</h1>
-        <div className="h-[1px] w-12 bg-wood/20 mx-auto" />
+        <h1 className="text-3xl sm:text-5xl md:text-6xl font-serif font-bold text-wood">There u go!</h1>
+        <div className="h-[1px] w-10 sm:w-12 bg-wood/20 mx-auto" />
       </motion.div>
 
-      {/* Composition Preview */}
-      <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full">
-        <div 
-          ref={resultRef}
-          className="bg-white p-3 pb-4 md:p-4 md:pb-6 shadow-[0_20px_50px_rgba(48,21,14,0.06)] rounded-sm flex flex-col gap-3 items-center justify-center"
-        >
-          <div className="relative h-[58vh] md:h-[62vh] max-h-[650px] aspect-[2/3] overflow-hidden bg-wood/5 rounded-sm">
-            <img src={getFrameImage()} className="w-full h-full object-cover" alt="Frame" />
+      {/* Side-by-Side: Composition & QR Code Card */}
+      <div className="flex-1 w-full max-w-[950px] flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12 px-2">
+        {/* Left Side: Composition Preview */}
+        <div className="flex-shrink-0 flex justify-center">
+          <div 
+            ref={resultRef}
+            className="bg-white p-2.5 pb-3 sm:p-3.5 sm:pb-4 md:p-4 md:pb-6 shadow-[0_20px_50px_rgba(48,21,14,0.06)] rounded-sm flex flex-col gap-2.5 sm:gap-3 items-center justify-center"
+          >
+            <div className="relative h-[42vh] sm:h-[50vh] md:h-[56vh] max-h-[580px] aspect-[2/3] overflow-hidden bg-wood/5 rounded-sm">
+              <img src={getFrameImage()} className="w-full h-full object-cover" alt="Frame" />
+              
+              {/* Absolute overlay of photos */}
+              {currentConfigs.map((config, index) => {
+                const mappedIndex = framePhotosMapping && framePhotosMapping[index] !== undefined 
+                  ? framePhotosMapping[index] 
+                  : index;
+                const src = photos[mappedIndex];
+
+                if (!src) return null;
+
+                return (
+                  <div
+                    key={index}
+                    style={{
+                      position: 'absolute',
+                      top: config.top,
+                      left: config.left,
+                      width: config.width,
+                      height: config.height,
+                    }}
+                    className="overflow-hidden"
+                  >
+                    <img
+                      src={src}
+                      className="w-full h-full object-cover grayscale-[0.1] contrast-[1.05]"
+                      alt={`Slot ${index + 1}`}
+                    />
+                  </div>
+                );
+              })}
+            </div>
             
-            {/* Absolute overlay of photos */}
-            {currentConfigs.map((config, index) => {
-              const mappedIndex = framePhotosMapping && framePhotosMapping[index] !== undefined 
-                ? framePhotosMapping[index] 
-                : index;
-              const src = photos[mappedIndex];
-
-              if (!src) return null;
-
-              return (
-                <div
-                  key={index}
-                  style={{
-                    position: 'absolute',
-                    top: config.top,
-                    left: config.left,
-                    width: config.width,
-                    height: config.height,
-                  }}
-                  className="overflow-hidden"
-                >
-                  <img
-                    src={src}
-                    className="w-full h-full object-cover grayscale-[0.1] contrast-[1.05]"
-                    alt={`Slot ${index + 1}`}
-                  />
-                </div>
-              );
-            })}
-          </div>
-          
-          <div className="text-center flex-shrink-0">
-            <p className="font-sans text-[8px] uppercase tracking-[0.4em] text-wood/30 font-bold">
-              STUDIO EDITION
-            </p>
+            <div className="text-center flex-shrink-0">
+              <p className="font-sans text-[7px] sm:text-[8px] uppercase tracking-[0.4em] text-wood/30 font-bold">
+                STUDIO EDITION
+              </p>
+            </div>
           </div>
         </div>
+
+        {/* Right Side: QR Code Card Panel */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+          className="bg-[#FAF0E6]/95 backdrop-blur-sm rounded-[24px] border border-wood/10 p-5 sm:p-7 flex flex-col items-center text-center shadow-[0_15px_30px_rgba(48,21,14,0.04)] w-full max-w-sm md:w-[320px] shrink-0"
+        >
+          <div className="w-10 h-10 rounded-full bg-[#FCE6DF] flex items-center justify-center text-[#91545B] mb-3 sm:mb-4">
+            <QrCode className="w-5 h-5" strokeWidth={1.5} />
+          </div>
+          <h3 className="text-lg sm:text-xl font-serif font-bold text-wood">Scan for Recap</h3>
+          <p className="text-[10px] sm:text-xs text-[#725A54] mt-1 sm:mt-1.5 mb-4 sm:mb-5 leading-relaxed font-sans max-w-[240px]">
+            Scan this QR code with your phone camera to view your digital session recap & loop animation!
+          </p>
+
+          {/* QR Code Container */}
+          <motion.div
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate('/recap')}
+            className="bg-white p-3 rounded-[20px] border border-wood/10 shadow-sm cursor-pointer relative group flex items-center justify-center"
+            title="Click to open Recap Directly"
+          >
+            <img 
+              src={qrImageUrl} 
+              className="w-32 h-32 sm:w-36 sm:h-36 rounded-xl"
+              alt="Session Recap QR Code"
+            />
+            {/* Subtle hover overlay hint */}
+            <div className="absolute inset-0 bg-[#30150E]/0 group-hover:bg-[#30150E]/2 rounded-[20px] transition-colors" />
+          </motion.div>
+
+          <button
+            onClick={() => navigate('/recap')}
+            className="mt-4 flex items-center gap-1.5 text-[10px] sm:text-xs text-[#91545B] hover:text-[#7a4249] font-sans font-bold uppercase tracking-widest transition-colors cursor-pointer"
+          >
+            Open Recap Directly
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </motion.div>
       </div>
 
-      {/* Actions */}
-      <div className="flex flex-col items-center gap-4 w-full max-w-[380px] flex-shrink-0">
-        <div className="flex gap-4 w-full">
+      {/* Action Buttons below */}
+      <div className="flex flex-col items-center gap-3 sm:gap-4 w-full max-w-[380px] flex-shrink-0 mt-2">
+        <div className="flex gap-2 sm:gap-4 w-full">
           <motion.button
             whileHover={{ scale: 1.02, backgroundColor: "#200e09" }}
             whileTap={{ scale: 0.98 }}
             onClick={handleDownload}
-            className="flex-1 flex items-center justify-center gap-2.5 bg-[#30150E] text-[#FDFBF9] py-3.5 rounded-full font-sans text-[9px] font-bold uppercase tracking-[0.2em] shadow-[0_10px_20px_rgba(48,21,14,0.15)] transition-colors cursor-pointer"
+            className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2.5 bg-[#30150E] text-[#FDFBF9] py-2.5 sm:py-3.5 rounded-full font-sans text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] shadow-[0_10px_20px_rgba(48,21,14,0.15)] transition-colors cursor-pointer"
           >
-            <Download className="w-3.5 h-3.5" />
+            <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             DOWNLOAD
           </motion.button>
           
@@ -255,18 +303,18 @@ const Result = () => {
             whileHover={{ scale: 1.02, backgroundColor: "#3f0a09" }}
             whileTap={{ scale: 0.98 }}
             onClick={handleShare}
-            className="flex-1 flex items-center justify-center gap-2.5 bg-[#530F0E] text-[#FDFBF9] py-3.5 rounded-full font-sans text-[9px] font-bold uppercase tracking-[0.2em] shadow-[0_10px_20px_rgba(83,15,14,0.15)] transition-colors cursor-pointer"
+            className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2.5 bg-[#530F0E] text-[#FDFBF9] py-2.5 sm:py-3.5 rounded-full font-sans text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] shadow-[0_10px_20px_rgba(83,15,14,0.15)] transition-colors cursor-pointer"
           >
-            <Share2 className="w-3.5 h-3.5" />
+            <Share2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             SHARE
           </motion.button>
         </div>
 
         <button 
           onClick={handleStartOver}
-          className="flex items-center gap-2.5 text-wood/50 hover:text-wood transition-colors font-sans text-[9px] uppercase tracking-[0.2em] font-bold cursor-pointer"
+          className="flex items-center gap-2 sm:gap-2.5 text-wood/50 hover:text-wood transition-colors font-sans text-[8px] sm:text-[9px] uppercase tracking-[0.15em] sm:tracking-[0.2em] font-bold cursor-pointer mt-1"
         >
-          <RotateCcw className="w-3 h-3" strokeWidth={2.5} />
+          <RotateCcw className="w-2.5 h-2.5 sm:w-3 sm:h-3" strokeWidth={2.5} />
           START OVER
         </button>
       </div>
@@ -274,7 +322,7 @@ const Result = () => {
       {/* Share Fallback Modal */}
       <AnimatePresence>
         {isShareModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
             {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
@@ -290,80 +338,80 @@ const Result = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="relative bg-[#FDFBF9] w-full max-w-md rounded-[28px] shadow-2xl p-6 md:p-8 flex flex-col items-center border border-wood/5 z-10"
+              className="relative bg-[#FDFBF9] w-full max-w-md rounded-[20px] sm:rounded-[28px] shadow-2xl p-5 sm:p-6 md:p-8 flex flex-col items-center border border-wood/5 z-10"
             >
               <button
                 onClick={() => setIsShareModalOpen(false)}
-                className="absolute top-6 right-6 text-wood/40 hover:text-wood transition-colors cursor-pointer"
+                className="absolute top-4 right-4 sm:top-6 sm:right-6 text-wood/40 hover:text-wood transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
 
-              <div className="text-center w-full mb-6">
-                <div className="w-12 h-12 rounded-full bg-[#FCE6DF] flex items-center justify-center mx-auto mb-4 animate-bounce">
-                  <Share2 className="w-5 h-5 text-[#91545B]" />
+              <div className="text-center w-full mb-4 sm:mb-6">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#FCE6DF] flex items-center justify-center mx-auto mb-3 sm:mb-4 animate-bounce">
+                  <Share2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#91545B]" />
                 </div>
-                <h3 className="text-2.5xl font-serif font-bold text-wood">Share Your Portrait</h3>
-                <p className="text-xs text-wood/60 mt-1.5 font-sans leading-relaxed">
+                <h3 className="text-xl sm:text-2xl font-serif font-bold text-wood">Share Your Portrait</h3>
+                <p className="text-[10px] sm:text-xs text-wood/60 mt-1 sm:mt-1.5 font-sans leading-relaxed">
                   Choose a platform to share your beautiful photo.
                 </p>
               </div>
 
-              <div className="flex flex-col gap-3.5 w-full">
+              <div className="flex flex-col gap-2.5 sm:gap-3.5 w-full">
                 {/* WhatsApp Button */}
                 <button
                   onClick={shareWhatsApp}
-                  className="w-full flex items-center justify-between p-4 bg-[#E8F8F0] hover:bg-[#D5F2E1] active:scale-[0.99] transition-all rounded-[18px] group cursor-pointer border border-[#c3ecd4]"
+                  className="w-full flex items-center justify-between p-3 sm:p-4 bg-[#E8F8F0] hover:bg-[#D5F2E1] active:scale-[0.99] transition-all rounded-[14px] sm:rounded-[18px] group cursor-pointer border border-[#c3ecd4]"
                 >
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-9 h-9 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-md">
-                      <WhatsAppIcon className="w-5 h-5" />
+                  <div className="flex items-center gap-2.5 sm:gap-3.5">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-md">
+                      <WhatsAppIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
                     <div className="text-left">
-                      <div className="text-[13px] font-bold text-wood font-sans">Share to WhatsApp</div>
-                      <div className="text-[10px] text-wood/50 font-sans">Send directly to your chat</div>
+                      <div className="text-[11px] sm:text-[13px] font-bold text-wood font-sans">Share to WhatsApp</div>
+                      <div className="text-[9px] sm:text-[10px] text-wood/50 font-sans">Send directly to your chat</div>
                     </div>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-wood/40 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-wood/40 group-hover:translate-x-1 transition-transform" />
                 </button>
 
                 {/* Instagram Button */}
                 <button
                   onClick={shareInstagram}
-                  className="w-full flex items-center justify-between p-4 bg-[#FFF0F3] hover:bg-[#FFE0E6] active:scale-[0.99] transition-all rounded-[18px] group cursor-pointer border border-[#ffd2dc]"
+                  className="w-full flex items-center justify-between p-3 sm:p-4 bg-[#FFF0F3] hover:bg-[#FFE0E6] active:scale-[0.99] transition-all rounded-[14px] sm:rounded-[18px] group cursor-pointer border border-[#ffd2dc]"
                 >
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#FD1D1D] via-[#F56040] to-[#E1306C] text-white flex items-center justify-center shadow-md">
-                      <InstagramIcon className="w-5 h-5" />
+                  <div className="flex items-center gap-2.5 sm:gap-3.5">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-[#FD1D1D] via-[#F56040] to-[#E1306C] text-white flex items-center justify-center shadow-md">
+                      <InstagramIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
                     <div className="text-left">
-                      <div className="text-[13px] font-bold text-wood font-sans">Share on Instagram</div>
-                      <div className="text-[10px] text-wood/50 font-sans">Post to Stories or Feed</div>
+                      <div className="text-[11px] sm:text-[13px] font-bold text-wood font-sans">Share on Instagram</div>
+                      <div className="text-[9px] sm:text-[10px] text-wood/50 font-sans">Post to Stories or Feed</div>
                     </div>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-wood/40 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-wood/40 group-hover:translate-x-1 transition-transform" />
                 </button>
 
                 {/* Copy Link Button */}
                 <button
                   onClick={copyLink}
-                  className="w-full flex items-center justify-between p-4 bg-[#FFF9F6] hover:bg-[#FCE6DF] active:scale-[0.99] transition-all rounded-[18px] group cursor-pointer border border-wood/5"
+                  className="w-full flex items-center justify-between p-3 sm:p-4 bg-[#FFF9F6] hover:bg-[#FCE6DF] active:scale-[0.99] transition-all rounded-[14px] sm:rounded-[18px] group cursor-pointer border border-wood/5"
                 >
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-9 h-9 rounded-full bg-[#30150E] text-white flex items-center justify-center shadow-md">
-                      <Link className="w-4.5 h-4.5" />
+                  <div className="flex items-center gap-2.5 sm:gap-3.5">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#30150E] text-white flex items-center justify-center shadow-md">
+                      <Link className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
                     </div>
                     <div className="text-left">
-                      <div className="text-[13px] font-bold text-wood font-sans">Copy Web Link</div>
-                      <div className="text-[10px] text-wood/50 font-sans">Copy link to clipboard</div>
+                      <div className="text-[11px] sm:text-[13px] font-bold text-wood font-sans">Copy Web Link</div>
+                      <div className="text-[9px] sm:text-[10px] text-wood/50 font-sans">Copy link to clipboard</div>
                     </div>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-wood/40 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-wood/40 group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-wood/5 w-full text-center">
-                <p className="text-[9px] uppercase tracking-widest text-[#91545B] font-bold font-sans">
+              <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-wood/5 w-full text-center">
+                <p className="text-[8px] sm:text-[9px] uppercase tracking-widest text-[#91545B] font-bold font-sans">
                   💡 Tip: Download first for easy attachment!
                 </p>
               </div>
@@ -379,7 +427,7 @@ const Result = () => {
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-8 z-[60] bg-[#30150E] text-white px-5 py-2.5 rounded-full text-xs font-bold tracking-widest uppercase shadow-xl flex items-center gap-2 border border-white/10"
+            className="fixed bottom-6 sm:bottom-8 z-[60] bg-[#30150E] text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase shadow-xl flex items-center gap-2 border border-white/10"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
             Link Copied!

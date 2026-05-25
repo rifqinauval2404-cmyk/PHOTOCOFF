@@ -6,13 +6,27 @@ import { usePhotography } from '../context/PhotographyContext';
 
 const Studio = () => {
   const navigate = useNavigate();
-  const { method, photoCount, setPhotos: setContextPhotos } = usePhotography();
+  const { method, photoCount, setPhotos: setContextPhotos, addDeletedPhoto, addRetakenPhoto } = usePhotography();
   const [photos, setPhotos] = useState([]);
-  const [stream, setStream] = useState(null);
   const [flash, setFlash] = useState(false);
   const [countdown, setCountdown] = useState(null);
   const videoRef = useRef(null);
   const timerRef = useRef(null);
+  const streamRef = useRef(null);
+
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { aspectRatio: 4 / 3, width: { ideal: 1280 }, height: { ideal: 960 } }
+      });
+      streamRef.current = mediaStream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+    }
+  };
 
   useEffect(() => {
     if (!method) {
@@ -24,28 +38,14 @@ const Studio = () => {
       startCamera();
     }
     return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
       }
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
     };
   }, [method, navigate]);
-
-  const startCamera = async () => {
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { aspectRatio: 4 / 3, width: { ideal: 1280 }, height: { ideal: 960 } }
-      });
-      setStream(mediaStream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
-    } catch (err) {
-      console.error("Error accessing camera:", err);
-    }
-  };
 
   const triggerCapture = () => {
     setFlash(true);
@@ -88,7 +88,20 @@ const Studio = () => {
   };
 
   const deletePhoto = (indexToDelete) => {
+    const deletedPhotoData = photos[indexToDelete];
+    if (deletedPhotoData) {
+      addDeletedPhoto(deletedPhotoData);
+    }
     setPhotos(photos.filter((_, index) => index !== indexToDelete));
+  };
+
+  const retakeLast = () => {
+    if (photos.length === 0) return;
+    const lastPhoto = photos[photos.length - 1];
+    if (lastPhoto) {
+      addRetakenPhoto(lastPhoto);
+    }
+    setPhotos(photos.slice(0, -1));
   };
 
   const handleNext = () => {
@@ -97,8 +110,7 @@ const Studio = () => {
   };
 
   return (
-
-    <div className="h-screen overflow-hidden w-screen bg-[#FDFBF9] flex flex-col items-center py-4 md:py-8 font-sans">
+    <div className="h-screen overflow-hidden w-screen bg-[#FDFBF9] flex flex-col items-center py-2 sm:py-4 md:py-8 font-sans">
 
       {/* Flash Effect */}
       <AnimatePresence>
@@ -112,15 +124,16 @@ const Studio = () => {
         )}
       </AnimatePresence>
 
-      <main className="flex flex-row items-center justify-between w-full max-w-[1100px] px-4 md:px-8 flex-1 min-h-0 gap-6">
+      {/* Mobile: column layout, Desktop: row layout */}
+      <main className="flex flex-col md:flex-row items-center md:items-center justify-between w-full max-w-[1100px] px-3 sm:px-4 md:px-8 flex-1 min-h-0 gap-3 sm:gap-4 md:gap-6">
         {/* Left Column: Viewfinder & Controls */}
-        <div className="flex flex-col flex-1 min-w-0 max-w-[660px] h-full justify-center">
+        <div className="flex flex-col flex-1 min-w-0 w-full md:max-w-[660px] min-h-0 justify-center">
           {/* Viewfinder */}
-          <div className="relative w-full aspect-[4/3] max-h-[70vh] bg-[#111] rounded-[20px] overflow-hidden shadow-2xl ring-1 ring-wood/10 mx-auto animate-fadeIn">
+          <div className="relative w-full aspect-[4/3] max-h-[35vh] sm:max-h-[45vh] md:max-h-[70vh] bg-[#111] rounded-[14px] sm:rounded-[20px] overflow-hidden shadow-2xl ring-1 ring-wood/10 mx-auto animate-fadeIn">
             {/* Viewfinder Guide Overlay */}
-            <div className="absolute inset-8 border border-white/10 pointer-events-none rounded-md z-10" />
+            <div className="absolute inset-4 sm:inset-8 border border-white/10 pointer-events-none rounded-md z-10" />
             <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-              <div className="w-10 h-10 relative">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 relative">
                 <div className="absolute top-1/2 left-0 w-full h-[1px] bg-white/30" />
                 <div className="absolute left-1/2 top-0 w-[1px] h-full bg-white/30" />
               </div>
@@ -132,9 +145,9 @@ const Studio = () => {
           </div>
 
           {/* Capture Controls */}
-          <div className="flex flex-col items-center mt-6 relative w-full">
+          <div className="flex flex-col items-center mt-3 sm:mt-6 relative w-full">
             {/* Small Countdown Display */}
-            <div className="h-10 flex items-center justify-center mb-2">
+            <div className="h-8 sm:h-10 flex items-center justify-center mb-1 sm:mb-2">
               <AnimatePresence mode="wait">
                 {countdown !== null && (
                   <motion.div
@@ -143,22 +156,22 @@ const Studio = () => {
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 1.1, opacity: 0, y: -10 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="bg-[#530F0E] text-[#FDFBF9] px-5 py-1.5 rounded-full text-[10px] font-bold tracking-[0.2em] uppercase font-sans flex items-center gap-2.5 shadow-lg border border-[#FDFBF9]/10"
+                    className="bg-[#530F0E] text-[#FDFBF9] px-4 sm:px-5 py-1 sm:py-1.5 rounded-full text-[9px] sm:text-[10px] font-bold tracking-[0.2em] uppercase font-sans flex items-center gap-2 sm:gap-2.5 shadow-lg border border-[#FDFBF9]/10"
                   >
-                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
+                    <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-red-500 animate-ping" />
                     POSE IN {countdown}
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
-            <div className="flex items-center relative w-full h-[80px]">
+            <div className="flex items-center relative w-full h-[60px] sm:h-[80px]">
               <button
-                onClick={() => setPhotos(photos.slice(0, -1))}
+                onClick={retakeLast}
                 disabled={photos.length === 0 || countdown !== null}
-                className="absolute left-6 text-[10px] uppercase tracking-[0.2em] font-bold text-wood/40 hover:text-wood disabled:opacity-0 transition-all cursor-pointer font-sans"
+                className="absolute left-2 sm:left-6 text-[9px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] font-bold text-wood/40 hover:text-wood disabled:opacity-0 transition-all cursor-pointer font-sans"
               >
-                RETAKE LAST
+                RETAKE
               </button>
 
               <motion.button
@@ -166,22 +179,52 @@ const Studio = () => {
                 whileTap={{ scale: (photos.length >= photoCount || countdown !== null) ? 1 : 0.9 }}
                 onClick={startCountdown}
                 disabled={photos.length >= photoCount || countdown !== null}
-                className="mx-auto w-[80px] h-[80px] rounded-full flex items-center justify-center bg-[#30150E] shadow-[0_15px_30px_rgba(48,21,14,0.2)] z-10 disabled:opacity-50 cursor-pointer"
+                className="mx-auto w-[56px] h-[56px] sm:w-[80px] sm:h-[80px] rounded-full flex items-center justify-center bg-[#30150E] shadow-[0_15px_30px_rgba(48,21,14,0.2)] z-10 disabled:opacity-50 cursor-pointer"
               >
-                <Aperture className={`w-10 h-10 text-white stroke-[1.5] ${countdown !== null ? 'animate-spin' : ''}`} />
+                <Aperture className={`w-7 h-7 sm:w-10 sm:h-10 text-white stroke-[1.5] ${countdown !== null ? 'animate-spin' : ''}`} />
               </motion.button>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Captured List */}
-        <div className="w-[33%] max-w-[340px] bg-white rounded-[24px] p-6 flex flex-col shadow-[0_20px_50px_rgba(48,21,14,0.03)] border border-wood/5 h-full min-h-0">
-          <div className="flex items-center justify-between pb-4 border-b border-wood/10 mb-4 flex-shrink-0">
-            <h2 className="text-[11px] font-bold text-wood uppercase tracking-[0.2em] font-sans">CAPTURED</h2>
-            <span className="text-[13px] italic font-serif text-wood/70">{photos.length} of {photoCount}</span>
+        {/* Right Column (desktop) / Bottom Row (mobile): Captured List */}
+        <div className="w-full md:w-[33%] md:max-w-[340px] bg-white rounded-[16px] sm:rounded-[24px] p-3 sm:p-6 flex flex-col shadow-[0_20px_50px_rgba(48,21,14,0.03)] border border-wood/5 md:h-full min-h-0 max-h-[30vh] md:max-h-none">
+          <div className="flex items-center justify-between pb-2 sm:pb-4 border-b border-wood/10 mb-2 sm:mb-4 flex-shrink-0">
+            <h2 className="text-[10px] sm:text-[11px] font-bold text-wood uppercase tracking-[0.2em] font-sans">CAPTURED</h2>
+            <span className="text-[11px] sm:text-[13px] italic font-serif text-wood/70">{photos.length} of {photoCount}</span>
           </div>
 
-          <div className={`grid gap-3 flex-1 min-h-0 ${photoCount === 6 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          {/* Mobile: horizontal scroll, Desktop: grid */}
+          <div className="flex md:hidden gap-2 overflow-x-auto flex-1 min-h-0 pb-1">
+            {[...Array(photoCount)].map((_, i) => (
+              <div key={i} className={`group flex-shrink-0 w-[80px] h-[60px] rounded-[10px] relative overflow-hidden transition-all ${photos[i] ? 'shadow-md ring-1 ring-wood/10' : 'bg-[#FFF9F6] border-2 border-dashed border-[#F3A0AA]/40'} flex items-center justify-center`}>
+                {photos[i] ? (
+                  <>
+                    <img src={photos[i]} className="w-full h-full object-cover absolute inset-0" alt={`Captured ${i + 1}`} />
+                    {/* Delete Overlay */}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 active:opacity-100 transition-opacity flex items-center justify-center">
+                      <button
+                        onClick={() => deletePhoto(i)}
+                        className="p-1.5 bg-white/20 hover:bg-[#91545B] rounded-full backdrop-blur-md text-white transition-all cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-0.5 opacity-60 p-1">
+                    <Camera className="w-3 h-3 text-[#91545B]/60" strokeWidth={1.5} />
+                    <span className="text-[6px] uppercase tracking-[0.1em] font-bold font-sans text-[#91545B]/60">
+                      EMPTY
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: original grid layout */}
+          <div className={`hidden md:grid gap-3 flex-1 min-h-0 ${photoCount === 6 ? 'grid-cols-2' : 'grid-cols-1'}`}>
             {[...Array(photoCount)].map((_, i) => (
               <div key={i} className={`group min-h-0 w-full rounded-[16px] relative overflow-hidden transition-all ${photos[i] ? 'shadow-md ring-1 ring-wood/10' : 'bg-[#FFF9F6] border-2 border-dashed border-[#F3A0AA]/40'} flex items-center justify-center`}>
                 {photos[i] ? (
@@ -212,10 +255,10 @@ const Studio = () => {
           <motion.button
             disabled={photos.length === 0}
             onClick={handleNext}
-            className={`mt-6 w-full py-3.5 rounded-xl flex items-center justify-center gap-2 font-sans text-[11px] font-bold uppercase tracking-[0.15em] transition-all flex-shrink-0 cursor-pointer ${photos.length > 0 ? 'bg-[#91545B] text-white hover:bg-[#7a4249] shadow-[0_10px_20px_rgba(145,84,91,0.2)]' : 'bg-wood/5 text-wood/30 cursor-not-allowed'}`}
+            className={`mt-3 sm:mt-6 w-full py-2.5 sm:py-3.5 rounded-xl flex items-center justify-center gap-2 font-sans text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.15em] transition-all flex-shrink-0 cursor-pointer ${photos.length > 0 ? 'bg-[#91545B] text-white hover:bg-[#7a4249] shadow-[0_10px_20px_rgba(145,84,91,0.2)]' : 'bg-wood/5 text-wood/30 cursor-not-allowed'}`}
           >
             NEXT STEP
-            <ArrowRight className="w-4 h-4 ml-1" />
+            <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1" />
           </motion.button>
         </div>
       </main>

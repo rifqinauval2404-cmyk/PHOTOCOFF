@@ -184,9 +184,23 @@
 }
 
 .method-grid {
-  display: grid !important;
-  grid-template-columns: repeat(2, 1fr) !important;
-  gap: 100px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 24px !important;
   margin: 0 auto !important;
   max-width: fit-content !important;
+}
+
+@media (min-width: 640px) {
+  .method-grid {
+    flex-direction: row !important;
+    gap: 48px !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .method-grid {
+    gap: 64px !important;
+  }
 }
