@@ -110,7 +110,12 @@ const Studio = () => {
   };
 
   return (
-    <div className="h-screen overflow-hidden w-screen bg-[#FDFBF9] flex flex-col items-center py-2 sm:py-4 md:py-8 font-sans">
+    <div className="h-screen overflow-hidden w-screen bg-silk flex flex-col items-center py-2 sm:py-4 md:py-8 font-sans relative">
+      {/* Decorative background image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none opacity-40 mix-blend-overlay z-0"
+        style={{ backgroundImage: "url('/bg_landingpage.png')" }}
+      />
 
       {/* Flash Effect */}
       <AnimatePresence>
@@ -125,7 +130,7 @@ const Studio = () => {
       </AnimatePresence>
 
       {/* Mobile: column layout, Desktop: row layout */}
-      <main className="flex flex-col md:flex-row items-center md:items-center justify-between w-full max-w-[1100px] px-3 sm:px-4 md:px-8 flex-1 min-h-0 gap-3 sm:gap-4 md:gap-6">
+      <main className="relative z-10 flex flex-col md:flex-row items-center md:items-center justify-between w-full max-w-[1100px] px-3 sm:px-4 md:px-8 flex-1 min-h-0 gap-3 sm:gap-4 md:gap-6">
         {/* Left Column: Viewfinder & Controls */}
         <div className="flex flex-col flex-1 min-w-0 w-full md:max-w-[660px] min-h-0 justify-center">
           {/* Viewfinder */}

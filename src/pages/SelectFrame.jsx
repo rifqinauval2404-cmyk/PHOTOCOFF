@@ -52,8 +52,14 @@ const SelectFrame = () => {
   };
 
   return (
-    <div className="h-screen overflow-y-auto md:overflow-hidden bg-[#FDFBF9] flex flex-col font-sans relative">
-      <main className="flex-1 p-3 sm:p-4 md:p-6 max-w-[1100px] mx-auto w-full flex flex-col gap-4 sm:gap-6 min-h-0">
+    <div className="h-screen overflow-y-auto md:overflow-hidden bg-silk flex flex-col font-sans relative">
+      {/* Decorative background image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none opacity-40 mix-blend-overlay z-0"
+        style={{ backgroundImage: "url('/bg_landingpage.png')" }}
+      />
+
+      <main className="relative z-10 flex-1 p-3 sm:p-4 md:p-6 max-w-[1100px] mx-auto w-full flex flex-col gap-4 sm:gap-6 min-h-0">
         <div className="text-center space-y-1.5 sm:space-y-2 flex-shrink-0">
           <h1 className="text-2xl sm:text-3xl md:text-5xl font-serif font-semibold text-wood">Select Your Frame</h1>
           <p className="text-wood/60 font-sans text-[10px] sm:text-[11px] md:text-[13px] max-w-xl mx-auto leading-relaxed">

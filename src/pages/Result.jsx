@@ -87,6 +87,10 @@ const Result = () => {
   const { photos, photoCount, frame, framePhotosMapping, resetAll } = usePhotography();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  
+  // WhatsApp sharing states
+  const [isWhatsAppFormOpen, setIsWhatsAppFormOpen] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState('');
 
   if (!photos || photos.length === 0) {
     return (
@@ -106,13 +110,15 @@ const Result = () => {
     const canvas = await html2canvas(resultRef.current, {
       scale: 3,
       useCORS: true,
-      backgroundColor: "#FDFBF9",
+      backgroundColor: "#F8E5D7", // Matches --color-silk
     });
     const image = canvas.toDataURL("image/jpeg", 0.95);
     const link = document.createElement("a");
     link.href = image;
     link.download = `pixel-snap-${Date.now()}.jpg`;
+    document.body.appendChild(link); // Append to DOM before click to support mobile downloads
     link.click();
+    document.body.removeChild(link); // Clean up DOM
   };
 
   const handleShare = async () => {
@@ -122,7 +128,7 @@ const Result = () => {
       const canvas = await html2canvas(resultRef.current, {
         scale: 3,
         useCORS: true,
-        backgroundColor: "#FDFBF9",
+        backgroundColor: "#F8E5D7",
       });
       
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.95));
@@ -143,18 +149,32 @@ const Result = () => {
     }
   };
 
-  const shareWhatsApp = () => {
-    const text = `Look at my beautiful photobooth photo from PhotoCoff! ${window.location.origin}`;
-    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+  const sendWhatsAppDirect = () => {
+    if (!whatsappNumber.trim()) return;
+    
+    // Normalize phone number
+    let cleanedNum = whatsappNumber.replace(/[^0-9]/g, '');
+    if (cleanedNum.startsWith('0')) {
+      cleanedNum = '62' + cleanedNum.substring(1);
+    }
+
+    const text = `Look at my beautiful photobooth live photo from PhotoCoff! ${window.location.origin}/recap`;
+    const url = `https://api.whatsapp.com/send?phone=${cleanedNum}&text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
+    setIsWhatsAppFormOpen(false);
+    setIsShareModalOpen(false);
   };
 
   const shareInstagram = () => {
+    // Copy link first to clipboard to let them share
+    navigator.clipboard.writeText(`${window.location.origin}/recap`);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2500);
     window.open('https://www.instagram.com/', '_blank');
   };
 
   const copyLink = () => {
-    navigator.clipboard.writeText(window.location.origin);
+    navigator.clipboard.writeText(`${window.location.origin}/recap`);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2500);
   };
@@ -184,18 +204,24 @@ const Result = () => {
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&color=30150e&bgcolor=faf0e6&data=${encodeURIComponent(recapUrl)}`;
 
   return (
-    <div className="min-h-screen bg-[#FDFBF9] py-6 sm:py-8 px-4 flex flex-col items-center justify-center gap-6 sm:gap-8 font-sans relative overflow-y-auto">
+    <div className="min-h-screen bg-silk py-6 sm:py-8 px-4 flex flex-col items-center justify-center gap-6 sm:gap-8 font-sans relative overflow-y-auto">
+      {/* Decorative background image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none opacity-40 mix-blend-overlay z-0"
+        style={{ backgroundImage: "url('/bg_landingpage.png')" }}
+      />
+
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-1.5 sm:space-y-2 flex-shrink-0"
+        className="text-center space-y-1.5 sm:space-y-2 flex-shrink-0 relative z-10"
       >
         <h1 className="text-3xl sm:text-5xl md:text-6xl font-serif font-bold text-wood">There u go!</h1>
         <div className="h-[1px] w-10 sm:w-12 bg-wood/20 mx-auto" />
       </motion.div>
 
       {/* Side-by-Side: Composition & QR Code Card */}
-      <div className="flex-1 w-full max-w-[950px] flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12 px-2">
+      <div className="flex-1 w-full max-w-[950px] flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12 px-2 relative z-10">
         {/* Left Side: Composition Preview */}
         <div className="flex-shrink-0 flex justify-center">
           <div 
@@ -287,7 +313,7 @@ const Result = () => {
       </div>
 
       {/* Action Buttons below */}
-      <div className="flex flex-col items-center gap-3 sm:gap-4 w-full max-w-[380px] flex-shrink-0 mt-2">
+      <div className="flex flex-col items-center gap-3 sm:gap-4 w-full max-w-[380px] flex-shrink-0 mt-2 relative z-10">
         <div className="flex gap-2 sm:gap-4 w-full">
           <motion.button
             whileHover={{ scale: 1.02, backgroundColor: "#200e09" }}
@@ -328,7 +354,7 @@ const Result = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsShareModalOpen(false)}
+              onClick={() => { setIsShareModalOpen(false); setIsWhatsAppFormOpen(false); }}
               className="absolute inset-0 bg-wood/75 backdrop-blur-sm"
             />
             
@@ -341,80 +367,130 @@ const Result = () => {
               className="relative bg-[#FDFBF9] w-full max-w-md rounded-[20px] sm:rounded-[28px] shadow-2xl p-5 sm:p-6 md:p-8 flex flex-col items-center border border-wood/5 z-10"
             >
               <button
-                onClick={() => setIsShareModalOpen(false)}
+                onClick={() => { setIsShareModalOpen(false); setIsWhatsAppFormOpen(false); }}
                 className="absolute top-4 right-4 sm:top-6 sm:right-6 text-wood/40 hover:text-wood transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
 
-              <div className="text-center w-full mb-4 sm:mb-6">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#FCE6DF] flex items-center justify-center mx-auto mb-3 sm:mb-4 animate-bounce">
-                  <Share2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#91545B]" />
+              {isWhatsAppFormOpen ? (
+                /* WhatsApp Direct Share Form Screen */
+                <div className="w-full flex flex-col items-center space-y-4">
+                  <div className="text-center w-full mb-2">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#E8F8F0] flex items-center justify-center mx-auto mb-3 text-[#25D366] shadow-sm">
+                      <WhatsAppIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-serif font-bold text-wood">Send to WhatsApp</h3>
+                    <p className="text-[10px] sm:text-xs text-wood/65 mt-1 font-sans leading-relaxed">
+                      Enter the recipient's phone number to send your recap link directly.
+                    </p>
+                  </div>
+
+                  <div className="w-full space-y-3">
+                    <div className="relative">
+                      <input
+                        type="tel"
+                        value={whatsappNumber}
+                        onChange={(e) => setWhatsappNumber(e.target.value)}
+                        placeholder="e.g. 08123456789 or 628..."
+                        className="w-full px-4 py-3 bg-[#FFF9F6] border border-wood/10 rounded-xl font-sans text-xs sm:text-sm text-wood focus:outline-none focus:ring-2 focus:ring-[#91545B]/20 focus:border-[#91545B] transition-all"
+                        autoFocus
+                      />
+                    </div>
+                    
+                    <p className="text-[8px] sm:text-[9px] text-[#725A54] font-sans leading-relaxed text-left pl-1">
+                      💡 Tip: Starting with "0" automatically converts to Indonesian code "62" (e.g. 0812... &rarr; 62812...).
+                    </p>
+
+                    <div className="flex gap-2.5 pt-2">
+                      <button
+                        onClick={() => setIsWhatsAppFormOpen(false)}
+                        className="flex-1 py-2.5 border border-wood/10 hover:bg-wood/5 rounded-xl font-sans text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-wood/60 transition-all cursor-pointer"
+                      >
+                        Back
+                      </button>
+                      <button
+                        onClick={sendWhatsAppDirect}
+                        className="flex-1 py-2.5 bg-[#25D366] hover:bg-[#20ba59] text-white rounded-xl font-sans text-[10px] sm:text-[11px] font-bold uppercase tracking-widest shadow-md transition-all cursor-pointer"
+                      >
+                        Send Chat
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="text-xl sm:text-2xl font-serif font-bold text-wood">Share Your Portrait</h3>
-                <p className="text-[10px] sm:text-xs text-wood/60 mt-1 sm:mt-1.5 font-sans leading-relaxed">
-                  Choose a platform to share your beautiful photo.
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-2.5 sm:gap-3.5 w-full">
-                {/* WhatsApp Button */}
-                <button
-                  onClick={shareWhatsApp}
-                  className="w-full flex items-center justify-between p-3 sm:p-4 bg-[#E8F8F0] hover:bg-[#D5F2E1] active:scale-[0.99] transition-all rounded-[14px] sm:rounded-[18px] group cursor-pointer border border-[#c3ecd4]"
-                >
-                  <div className="flex items-center gap-2.5 sm:gap-3.5">
-                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-md">
-                      <WhatsAppIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+              ) : (
+                /* Main Share Options Screen */
+                <div className="w-full flex flex-col items-center">
+                  <div className="text-center w-full mb-4 sm:mb-6">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#FCE6DF] flex items-center justify-center mx-auto mb-3 sm:mb-4 animate-bounce">
+                      <Share2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#91545B]" />
                     </div>
-                    <div className="text-left">
-                      <div className="text-[11px] sm:text-[13px] font-bold text-wood font-sans">Share to WhatsApp</div>
-                      <div className="text-[9px] sm:text-[10px] text-wood/50 font-sans">Send directly to your chat</div>
-                    </div>
+                    <h3 className="text-xl sm:text-2xl font-serif font-bold text-wood">Share Your Portrait</h3>
+                    <p className="text-[10px] sm:text-xs text-wood/60 mt-1 sm:mt-1.5 font-sans leading-relaxed">
+                      Choose a platform to share your beautiful photo.
+                    </p>
                   </div>
-                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-wood/40 group-hover:translate-x-1 transition-transform" />
-                </button>
 
-                {/* Instagram Button */}
-                <button
-                  onClick={shareInstagram}
-                  className="w-full flex items-center justify-between p-3 sm:p-4 bg-[#FFF0F3] hover:bg-[#FFE0E6] active:scale-[0.99] transition-all rounded-[14px] sm:rounded-[18px] group cursor-pointer border border-[#ffd2dc]"
-                >
-                  <div className="flex items-center gap-2.5 sm:gap-3.5">
-                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-[#FD1D1D] via-[#F56040] to-[#E1306C] text-white flex items-center justify-center shadow-md">
-                      <InstagramIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </div>
-                    <div className="text-left">
-                      <div className="text-[11px] sm:text-[13px] font-bold text-wood font-sans">Share on Instagram</div>
-                      <div className="text-[9px] sm:text-[10px] text-wood/50 font-sans">Post to Stories or Feed</div>
-                    </div>
+                  <div className="flex flex-col gap-2.5 sm:gap-3.5 w-full">
+                    {/* WhatsApp Button */}
+                    <button
+                      onClick={() => setIsWhatsAppFormOpen(true)}
+                      className="w-full flex items-center justify-between p-3 sm:p-4 bg-[#E8F8F0] hover:bg-[#D5F2E1] active:scale-[0.99] transition-all rounded-[14px] sm:rounded-[18px] group cursor-pointer border border-[#c3ecd4]"
+                    >
+                      <div className="flex items-center gap-2.5 sm:gap-3.5">
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-md">
+                          <WhatsAppIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </div>
+                        <div className="text-left">
+                          <div className="text-[11px] sm:text-[13px] font-bold text-wood font-sans">Share to WhatsApp</div>
+                          <div className="text-[9px] sm:text-[10px] text-wood/50 font-sans">Send directly to your chat</div>
+                        </div>
+                      </div>
+                      <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-wood/40 group-hover:translate-x-1 transition-transform" />
+                    </button>
+
+                    {/* Instagram Button */}
+                    <button
+                      onClick={shareInstagram}
+                      className="w-full flex items-center justify-between p-3 sm:p-4 bg-[#FFF0F3] hover:bg-[#FFE0E6] active:scale-[0.99] transition-all rounded-[14px] sm:rounded-[18px] group cursor-pointer border border-[#ffd2dc]"
+                    >
+                      <div className="flex items-center gap-2.5 sm:gap-3.5">
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-[#FD1D1D] via-[#F56040] to-[#E1306C] text-white flex items-center justify-center shadow-md">
+                          <InstagramIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </div>
+                        <div className="text-left">
+                          <div className="text-[11px] sm:text-[13px] font-bold text-wood font-sans">Share on Instagram</div>
+                          <div className="text-[9px] sm:text-[10px] text-wood/50 font-sans">Send link & upload photo</div>
+                        </div>
+                      </div>
+                      <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-wood/40 group-hover:translate-x-1 transition-transform" />
+                    </button>
+
+                    {/* Copy Link Button */}
+                    <button
+                      onClick={copyLink}
+                      className="w-full flex items-center justify-between p-3 sm:p-4 bg-[#FFF9F6] hover:bg-[#FCE6DF] active:scale-[0.99] transition-all rounded-[14px] sm:rounded-[18px] group cursor-pointer border border-wood/5"
+                    >
+                      <div className="flex items-center gap-2.5 sm:gap-3.5">
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#30150E] text-white flex items-center justify-center shadow-md">
+                          <Link className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+                        </div>
+                        <div className="text-left">
+                          <div className="text-[11px] sm:text-[13px] font-bold text-wood font-sans">Copy Web Link</div>
+                          <div className="text-[9px] sm:text-[10px] text-wood/50 font-sans">Copy link to clipboard</div>
+                        </div>
+                      </div>
+                      <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-wood/40 group-hover:translate-x-1 transition-transform" />
+                    </button>
                   </div>
-                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-wood/40 group-hover:translate-x-1 transition-transform" />
-                </button>
 
-                {/* Copy Link Button */}
-                <button
-                  onClick={copyLink}
-                  className="w-full flex items-center justify-between p-3 sm:p-4 bg-[#FFF9F6] hover:bg-[#FCE6DF] active:scale-[0.99] transition-all rounded-[14px] sm:rounded-[18px] group cursor-pointer border border-wood/5"
-                >
-                  <div className="flex items-center gap-2.5 sm:gap-3.5">
-                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#30150E] text-white flex items-center justify-center shadow-md">
-                      <Link className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
-                    </div>
-                    <div className="text-left">
-                      <div className="text-[11px] sm:text-[13px] font-bold text-wood font-sans">Copy Web Link</div>
-                      <div className="text-[9px] sm:text-[10px] text-wood/50 font-sans">Copy link to clipboard</div>
-                    </div>
+                  <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-wood/5 w-full text-center">
+                    <p className="text-[8px] sm:text-[9px] uppercase tracking-widest text-[#91545B] font-bold font-sans">
+                      💡 Tip: Download first for easy attachment!
+                    </p>
                   </div>
-                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-wood/40 group-hover:translate-x-1 transition-transform" />
-                </button>
-              </div>
-
-              <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-wood/5 w-full text-center">
-                <p className="text-[8px] sm:text-[9px] uppercase tracking-widest text-[#91545B] font-bold font-sans">
-                  💡 Tip: Download first for easy attachment!
-                </p>
-              </div>
+                </div>
+              )}
             </motion.div>
           </div>
         )}
@@ -430,7 +506,7 @@ const Result = () => {
             className="fixed bottom-6 sm:bottom-8 z-[60] bg-[#30150E] text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase shadow-xl flex items-center gap-2 border border-white/10"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-            Link Copied!
+            Recap Link Copied!
           </motion.div>
         )}
       </AnimatePresence>
